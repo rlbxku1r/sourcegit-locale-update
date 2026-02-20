@@ -1,0 +1,111 @@
+#include "tinyxml2/tinyxml2.h"
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <ostream>
+#include <string>
+#include <unordered_map>
+
+static const char *DEFAULT_APP_NAME{"sourcegit-locale-update"};
+
+enum class UpdateMode { Merge, Review };
+
+struct CommandLineOptions {
+  UpdateMode update_mode;
+  std::string base_xml_file;
+  std::string localized_xml_file;
+};
+
+CommandLineOptions parse_command_line_options(int argc, char *argv[]) {
+  if (argc != 3 && argc != 4) {
+    std::cerr << "Usage: " << (argc == 0 ? DEFAULT_APP_NAME : argv[0])
+              << " UPDATE_MODE LOCALIZED_XML_FILE [BASE_XML_FILE]" << std::endl;
+    std::exit(1);
+  }
+
+  UpdateMode update_mode;
+  if (strcmp(argv[1], "merge") == 0) {
+    update_mode = UpdateMode::Merge;
+  } else if (strcmp(argv[1], "review") == 0) {
+    update_mode = UpdateMode::Review;
+  } else {
+    std::cerr << "Invalid UPDATE_MODE '" << argv[1] << "'." << std::endl;
+    std::cerr << "Accepted values are: 'merge', 'review'." << std::endl;
+    std::exit(1);
+  }
+
+  std::string base_xml_file{"en_US.axaml"};
+  if (argc == 4) {
+    base_xml_file = argv[3];
+  }
+
+  return {.update_mode = update_mode,
+          .base_xml_file = base_xml_file,
+          .localized_xml_file = argv[2]};
+}
+
+std::unordered_map<std::string, std::string>
+parse_localized_strings(tinyxml2::XMLDocument &from) {
+  auto element{tinyxml2::XMLHandle{from}
+                   .FirstChildElement("ResourceDictionary")
+                   .FirstChildElement("x:String")
+                   .ToElement()};
+  if (!element) {
+    std::cerr << "Could not parse the localized XML file." << std::endl;
+    std::exit(1);
+  }
+  std::unordered_map<std::string, std::string> localized_strings;
+  while (element) {
+    const char *key;
+    if (element->QueryStringAttribute("x:Key", &key) == tinyxml2::XML_SUCCESS) {
+      localized_strings[key] = element->GetText();
+    }
+    element = element->NextSiblingElement();
+  }
+  return localized_strings;
+}
+
+int main(int argc, char *argv[]) {
+  auto command_line_options{parse_command_line_options(argc, argv)};
+
+  tinyxml2::XMLDocument doc_base, doc_loc;
+  doc_base.LoadFile(command_line_options.base_xml_file.c_str());
+  if (doc_base.Error()) {
+    std::cerr << "Could not load '" << command_line_options.base_xml_file
+              << "'." << std::endl;
+    std::exit(1);
+  }
+  doc_loc.LoadFile(command_line_options.localized_xml_file.c_str());
+  if (doc_loc.Error()) {
+    std::cerr << "Could not load '" << command_line_options.localized_xml_file
+              << "'." << std::endl;
+    std::exit(1);
+  }
+
+  auto element{tinyxml2::XMLHandle{doc_base}
+                   .FirstChildElement("ResourceDictionary")
+                   .FirstChildElement("x:String")
+                   .ToElement()};
+  if (!element) {
+    std::cerr << "Could not parse the base XML file." << std::endl;
+    std::exit(1);
+  }
+  auto localized_strings{parse_localized_strings(doc_loc)};
+  while (element) {
+    const char *key;
+    if (element->QueryStringAttribute("x:Key", &key) == tinyxml2::XML_SUCCESS) {
+      if (command_line_options.update_mode == UpdateMode::Review) {
+        element->InsertNewComment(element->GetText());
+      }
+      auto iter{localized_strings.find(key)};
+      if (iter != localized_strings.end()) {
+        element->SetText(iter->second.c_str());
+      }
+    }
+    element = element->NextSiblingElement();
+  }
+
+  doc_base.SaveFile(stdout);
+
+  return 0;
+}
