@@ -7,7 +7,11 @@ set OUTPUT_BIN sourcegit-locale-update
 set OUTPUT_DIR $SOURCE_DIR/bin
 
 if ! set -q CXX
-    set CXX g++
+    if command -q clang++
+        set CXX clang++
+    else
+        set CXX g++
+    end
 end
 
 mkdir -p $OUTPUT_DIR
