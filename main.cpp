@@ -95,13 +95,15 @@ int main(int argc, char *argv[]) {
   doc_base.LoadFile(command_line_options.base_xml_file.c_str());
   if (doc_base.Error()) {
     std::cerr << "Could not load '" << command_line_options.base_xml_file
-              << "'." << std::endl;
+              << "':" << std::endl;
+    std::cerr << doc_base.ErrorStr() << std::endl;
     std::exit(1);
   }
   doc_loc.LoadFile(command_line_options.localized_xml_file.c_str());
   if (doc_loc.Error()) {
     std::cerr << "Could not load '" << command_line_options.localized_xml_file
-              << "'." << std::endl;
+              << "':" << std::endl;
+    std::cerr << doc_base.ErrorStr() << std::endl;
     std::exit(1);
   }
 
@@ -136,7 +138,8 @@ int main(int argc, char *argv[]) {
   LocaleXMLPrinter stream{stdout};
   doc_base.Print(&stream);
   if (doc_base.Error()) {
-    std::cerr << "Could not print the final XML data." << std::endl;
+    std::cerr << "Could not print the final XML data:" << std::endl;
+    std::cerr << doc_base.ErrorStr() << std::endl;
     std::exit(1);
   }
 
