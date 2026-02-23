@@ -1,3 +1,4 @@
+#include "locale_xml_printer.hpp"
 #include "tinyxml2/tinyxml2.h"
 #include <cstdlib>
 #include <cstring>
@@ -44,6 +45,28 @@ CommandLineOptions parse_command_line_options(int argc, char *argv[]) {
           .localized_xml_file = argv[2]};
 }
 
+void add_mergeddictionaries_metadata(
+    tinyxml2::XMLDocument &doc,
+    tinyxml2::XMLElement *resourcedictionary_element,
+    const std::string &base_xml_file) {
+  // <ResourceInclude> - Source
+  std::string resourceinclude_source{"avares://SourceGit/Resources/Locales/"};
+  auto pos{base_xml_file.find_last_of("/\\")};
+  resourceinclude_source +=
+      (pos == std::string::npos ? base_xml_file
+                                : base_xml_file.substr(pos + 1));
+  // <ResourceInclude>
+  auto resourceinclude_element{doc.NewElement("ResourceInclude")};
+  resourceinclude_element->SetAttribute("Source",
+                                        resourceinclude_source.c_str());
+  // <ResourceDictionary.MergedDictionaries>
+  auto mergeddictionaries_element{
+      doc.NewElement("ResourceDictionary.MergedDictionaries")};
+  mergeddictionaries_element->InsertFirstChild(resourceinclude_element);
+  // <ResourceDictionary>
+  resourcedictionary_element->InsertFirstChild(mergeddictionaries_element);
+}
+
 std::unordered_map<std::string, std::string>
 parse_localized_strings(tinyxml2::XMLDocument &from) {
   auto element{tinyxml2::XMLHandle{from}
@@ -82,30 +105,40 @@ int main(int argc, char *argv[]) {
     std::exit(1);
   }
 
-  auto element{tinyxml2::XMLHandle{doc_base}
-                   .FirstChildElement("ResourceDictionary")
-                   .FirstChildElement("x:String")
-                   .ToElement()};
-  if (!element) {
+  auto resourcedictionary_handle{
+      tinyxml2::XMLHandle{doc_base}.FirstChildElement("ResourceDictionary")},
+      xstring_handle{resourcedictionary_handle.FirstChildElement("x:String")};
+  auto resourcedictionary_element{resourcedictionary_handle.ToElement()},
+      xstring_element{xstring_handle.ToElement()};
+  if (!resourcedictionary_element || !xstring_element) {
     std::cerr << "Could not parse the base XML file." << std::endl;
     std::exit(1);
   }
   auto localized_strings{parse_localized_strings(doc_loc)};
-  while (element) {
+  while (xstring_element) {
     const char *key;
-    if (element->QueryStringAttribute("x:Key", &key) == tinyxml2::XML_SUCCESS) {
+    if (xstring_element->QueryStringAttribute("x:Key", &key) ==
+        tinyxml2::XML_SUCCESS) {
       if (command_line_options.update_mode == UpdateMode::Review) {
-        element->InsertNewComment(element->GetText());
+        xstring_element->InsertNewComment(xstring_element->GetText());
       }
       auto iter{localized_strings.find(key)};
       if (iter != localized_strings.end()) {
-        element->SetText(iter->second.c_str());
+        xstring_element->SetText(iter->second.c_str());
       }
     }
-    element = element->NextSiblingElement();
+    xstring_element = xstring_element->NextSiblingElement();
   }
 
-  doc_base.SaveFile(stdout);
+  add_mergeddictionaries_metadata(doc_base, resourcedictionary_element,
+                                  command_line_options.base_xml_file);
+
+  LocaleXMLPrinter stream{stdout};
+  doc_base.Print(&stream);
+  if (doc_base.Error()) {
+    std::cerr << "Could not print the final XML data." << std::endl;
+    std::exit(1);
+  }
 
   return 0;
 }
