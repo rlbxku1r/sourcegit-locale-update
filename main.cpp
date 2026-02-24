@@ -1,5 +1,6 @@
 #include "locale_xml_printer.hpp"
 #include "tinyxml2/tinyxml2.h"
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -88,6 +89,19 @@ parse_localized_strings(tinyxml2::XMLDocument &from) {
   return localized_strings;
 }
 
+std::string sanity_xml_comment(const char *comment) {
+  std::string sanitized_comment;
+  for (std::size_t i{0}; comment[i] != '\0';) {
+    if (comment[i] == '-' && comment[i + 1] == '-') {
+      sanitized_comment += "&#45;&#45;";
+      i += 2;
+    } else {
+      sanitized_comment += comment[i++];
+    }
+  }
+  return sanitized_comment;
+}
+
 int main(int argc, char *argv[]) {
   auto command_line_options{parse_command_line_options(argc, argv)};
 
@@ -122,7 +136,8 @@ int main(int argc, char *argv[]) {
     if (xstring_element->QueryStringAttribute("x:Key", &key) ==
         tinyxml2::XML_SUCCESS) {
       if (command_line_options.update_mode == UpdateMode::Review) {
-        xstring_element->InsertNewComment(xstring_element->GetText());
+        auto sanitized_comment{sanity_xml_comment(xstring_element->GetText())};
+        xstring_element->InsertNewComment(sanitized_comment.c_str());
       }
       auto iter{localized_strings.find(key)};
       if (iter != localized_strings.end()) {
