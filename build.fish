@@ -1,10 +1,10 @@
 #!/usr/bin/env fish
 
-set SOURCE_FILES main.cpp tinyxml2/tinyxml2.cpp
-set SOURCE_DIR (status dirname)
+set source_files main.cpp tinyxml2/tinyxml2.cpp
+set source_dir (status dirname)
 
-set OUTPUT_BIN sourcegit-locale-update
-set OUTPUT_DIR $SOURCE_DIR/bin
+set output_bin sourcegit-locale-update
+set output_dir $source_dir/bin
 
 if ! set -q CXX
     if command -q clang++
@@ -14,5 +14,5 @@ if ! set -q CXX
     end
 end
 
-mkdir -p $OUTPUT_DIR
-$CXX -o $OUTPUT_DIR/$OUTPUT_BIN $SOURCE_DIR/$SOURCE_FILES
+mkdir -p $output_dir
+$CXX -o $output_dir/$output_bin $source_dir/$source_files
