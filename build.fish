@@ -3,7 +3,7 @@
 set source_files main.cpp tinyxml2/tinyxml2.cpp
 set source_dir (status dirname)
 
-set output_bin sourcegit-locale-update
+set output_bin sourcegit-update-locale
 set output_dir $source_dir/bin
 
 if ! set -q CXX

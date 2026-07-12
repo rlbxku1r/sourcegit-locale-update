@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 
-static const char *DEFAULT_APP_NAME{"sourcegit-locale-update"};
+static const char *DEFAULT_APP_NAME{"sourcegit-update-locale"};
 
 enum class UpdateMode { Merge, Review };
 
