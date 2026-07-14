@@ -7,6 +7,7 @@ mod locale_res;
 mod printer;
 
 #[derive(clap::Parser)]
+#[command(about)]
 struct CommandLineOptions {
     update_mode: UpdateMode,
     localized_xml_file: String,
