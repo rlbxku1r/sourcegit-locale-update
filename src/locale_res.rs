@@ -40,9 +40,10 @@ impl LocaleRes {
 
     pub fn from_file<P>(path: P) -> Result<Self, Box<dyn std::error::Error>>
     where
-        P: AsRef<Path>,
+        P: AsRef<Path> + Display,
     {
-        let content = fs::read_to_string(path)?;
+        let content =
+            fs::read_to_string(&path).map_err(|err| format!("Could not read '{path}': {err}"))?;
         let doc = Document::parse(&content)?;
         Self::from_doc(&doc)
     }
