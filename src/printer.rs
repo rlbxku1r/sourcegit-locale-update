@@ -1,16 +1,15 @@
 use std::io;
 
 use crate::{
-    UpdateMode,
+    CommandLineOptions, UpdateMode,
     locale_res::{LocaleRes, LocaleStr},
 };
 
 pub fn print_xml<Writer>(
     mut w: Writer,
-    base_xml_name: &str,
+    options: &CommandLineOptions,
     base_res: &LocaleRes,
     localized_res: &LocaleRes,
-    update_mode: UpdateMode,
 ) -> Result<(), io::Error>
 where
     Writer: io::Write,
@@ -22,7 +21,8 @@ where
     writeln!(w, "  <ResourceDictionary.MergedDictionaries>")?;
     writeln!(
         w,
-        "    <ResourceInclude Source=\"avares://SourceGit/Resources/Locales/{base_xml_name}\"/>",
+        "    <ResourceInclude Source=\"avares://SourceGit/Resources/Locales/{}\"/>",
+        extract_file_name(&options.base_xml_file)
     )?;
     writeln!(w, "  </ResourceDictionary.MergedDictionaries>")?;
     writeln!(w)?;
@@ -46,7 +46,7 @@ where
             write!(w, " xml:space=\"{space}\"")?;
         }
         write!(w, ">{}", escape_text(text))?;
-        if update_mode == UpdateMode::Review {
+        if options.update_mode == UpdateMode::Review {
             write!(w, "<!--{}-->", escape_comment(base_text))?;
         }
         write!(w, "</x:String>")?;
@@ -54,6 +54,10 @@ where
     }
     writeln!(w, "</ResourceDictionary>")?;
     Ok(())
+}
+
+fn extract_file_name(path: &str) -> &str {
+    path.rsplit_once('/').map_or(path, |(_, name)| name)
 }
 
 fn escape_text(text: &str) -> String {
