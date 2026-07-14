@@ -10,7 +10,7 @@ pub struct LocaleRes {
 }
 
 impl LocaleRes {
-    pub fn from_doc(doc: &Document) -> Result<Self, Box<dyn std::error::Error>> {
+    fn from_doc(doc: &Document) -> Result<Self, Box<dyn std::error::Error>> {
         let mut strings = Vec::new();
         let node = doc
             .root()
