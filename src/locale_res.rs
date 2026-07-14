@@ -17,22 +17,19 @@ impl LocaleRes {
             .first_element_child()
             .ok_or("`ResourceDictionary` element is missing")?;
         for node in node.children() {
-            match node.tag_name().name() {
-                "String" => {
-                    let key = node
-                        .attribute("Key")
-                        .ok_or("`x:Key` attribute is missing")?
-                        .to_owned();
-                    let space = node
-                        .attribute("space")
-                        .and_then(|space| space.try_into().ok());
-                    let text = node
-                        .text()
-                        .ok_or("`x:String` element text is missing")?
-                        .to_owned();
-                    strings.push(LocaleStr { key, space, text });
-                }
-                _ => (),
+            if node.tag_name().name() == "String" {
+                let key = node
+                    .attribute("Key")
+                    .ok_or("`x:Key` attribute is missing")?
+                    .to_owned();
+                let space = node
+                    .attribute("space")
+                    .and_then(|space| space.try_into().ok());
+                let text = node
+                    .text()
+                    .ok_or("`x:String` element text is missing")?
+                    .to_owned();
+                strings.push(LocaleStr { key, space, text });
             }
         }
         Ok(Self { strings })
