@@ -1,9 +1,5 @@
 use roxmltree::Document;
-use std::{
-    fmt::{self, Display, Formatter},
-    fs,
-    path::Path,
-};
+use std::{fs, path::Path};
 
 pub struct LocaleRes {
     pub strings: Vec<LocaleStr>,
@@ -22,9 +18,7 @@ impl LocaleRes {
                     .attribute("Key")
                     .ok_or("`x:Key` attribute is missing")?
                     .to_owned();
-                let space = node
-                    .attribute("space")
-                    .and_then(|space| space.try_into().ok());
+                let space = node.attribute("space").and_then(|space| space.parse().ok());
                 let text = node
                     .text()
                     .ok_or("`x:String` element text is missing")?
@@ -37,7 +31,7 @@ impl LocaleRes {
 
     pub fn from_file<P>(path: P) -> Result<Self, Box<dyn std::error::Error>>
     where
-        P: AsRef<Path> + Display,
+        P: AsRef<Path> + std::fmt::Display,
     {
         let content =
             fs::read_to_string(&path).map_err(|err| format!("Could not read '{path}': {err}"))?;
@@ -52,28 +46,9 @@ pub struct LocaleStr {
     pub text: String,
 }
 
+#[derive(strum::Display, strum::EnumString)]
+#[strum(serialize_all = "lowercase")]
 pub enum XmlSpace {
     Default,
     Preserve,
-}
-
-impl Display for XmlSpace {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::Default => "default",
-            Self::Preserve => "preserve",
-        })
-    }
-}
-
-impl TryFrom<&str> for XmlSpace {
-    type Error = &'static str;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "default" => Ok(Self::Default),
-            "preserve" => Ok(Self::Preserve),
-            _ => Err("`xml:space` must be \"default\" or \"preserve\""),
-        }
-    }
 }
