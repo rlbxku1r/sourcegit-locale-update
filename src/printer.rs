@@ -5,15 +5,12 @@ use crate::{
     locale_res::{LocaleRes, LocaleStr},
 };
 
-pub fn print_xml<Writer>(
-    mut w: Writer,
+pub fn print_xml(
+    mut w: impl io::Write,
     options: &CommandLineOptions,
     base_res: &LocaleRes,
     localized_res: &LocaleRes,
-) -> Result<(), io::Error>
-where
-    Writer: io::Write,
-{
+) -> Result<(), io::Error> {
     writeln!(
         w,
         "<ResourceDictionary xmlns=\"https://github.com/avaloniaui\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\">"
