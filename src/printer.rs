@@ -29,15 +29,12 @@ pub fn print_xml(
         text: base_text,
     } in &base_res.strings
     {
-        let text = if let Some(LocaleStr {
-            text: localized_text,
-            ..
-        }) = localized_res.strings.iter().find(|&s| s.key == *key)
-        {
-            localized_text
-        } else {
-            base_text
-        };
+        let text = localized_res
+            .strings
+            .iter()
+            .find(|s| s.key == *key)
+            .map(|s| &s.text)
+            .unwrap_or(base_text);
         write!(w, "  <x:String x:Key=\"{}\"", escape_attribute_value(key))?;
         if let Some(space) = space {
             write!(w, " xml:space=\"{space}\"")?;

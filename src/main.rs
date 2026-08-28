@@ -1,7 +1,7 @@
 use clap::Parser as _;
 use std::io;
 
-use locale_res::LocaleRes;
+use crate::locale_res::LocaleRes;
 
 mod locale_res;
 mod printer;
