@@ -55,9 +55,19 @@ fn extract_file_name(path: &str) -> &str {
 }
 
 fn escape_text(text: &str) -> String {
-    text.replace("&", "&amp;") // "&" should be first
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
+    text.chars()
+        .fold(String::with_capacity(text.len()), |mut s, ch| {
+            s += match ch {
+                '&' => "&amp;",
+                '<' => "&lt;",
+                '>' => "&gt;",
+                _ => {
+                    s.push(ch);
+                    return s;
+                }
+            };
+            s
+        })
 }
 
 fn escape_attribute_value(attribute_value: &str) -> String {
